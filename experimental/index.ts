@@ -1,8 +1,8 @@
-import {Project, SourceFile, ts, Node, StatementedNode} from 'ts-morph';
+import {Project, ts, Node} from 'ts-morph';
 
-const main = async (): Promise<void> => {
+const fixNoImplicitReturns = async (): Promise<void> => {
   const project = new Project({
-    tsConfigFilePath: './tsconfig.json',
+    tsConfigFilePath: './test/tsconfig.json',
   });
 
   const sourceFiles = project.getSourceFiles();
@@ -12,51 +12,59 @@ const main = async (): Promise<void> => {
   //   })
   // );
 
-  const sourceFile = project.getSourceFile('test.ts');
-  const sourceFileDiagnostics = sourceFile.getPreEmitDiagnostics();
-  // console.log(sourceFileDiagnostics);
+  for (const sourceFile of sourceFiles) {
+    const sourceFileDiagnostics = sourceFile.getPreEmitDiagnostics();
+    console.log(sourceFileDiagnostics);
 
-  const diagnosticPos = new Set();
-  sourceFileDiagnostics.forEach(diagnostic => {
-    diagnosticPos.add(diagnostic.getStart());
-  });
-  // console.log(diagnosticPos);
+    const diagnosticPos = new Set();
+    sourceFileDiagnostics.forEach(diagnostic => {
+      diagnosticPos.add(diagnostic.getStart());
+    });
+    // console.log(diagnosticPos);
 
-  const errors = [];
-  sourceFile.forEachDescendant(node => {
-    if (diagnosticPos.has(node.getStart())) {
-      errors.push(node);
-    }
-  });
-  // console.log(errors);
-
-  for (var i = errors.length - 1; i >= 0; i--) {
-    let currError = errors[i];
-    if (Node.isIdentifier(currError)) {
-      const parent = currError.getParent();
-      if (Node.isFunctionDeclaration(parent)) {
-        parent.addStatements('// FIX GOES HERE');
-        parent.addStatements('return undefined;');
+    const errors: Node<ts.Node>[] = [];
+    sourceFile.forEachDescendant(node => {
+      if (diagnosticPos.has(node.getStart())) {
+        errors.push(node);
       }
-    } else if (Node.isReturnStatement(currError)) {
+    });
+    // console.log(errors);
+
+    for (let i = errors.length - 1; i >= 0; i--) {
+      const currError = errors[i];
       const parent = currError.getParent();
-      if (Node.isBlock(parent)) {
+      if (
+        Node.isIdentifier(currError) &&
+        parent &&
+        Node.isFunctionDeclaration(parent)
+      ) {
+        parent.addStatements(
+          '// typescript-flag-upgrade automated fix: --noImplicitReturns'
+        );
+        parent.addStatements('return undefined;');
+      } else if (
+        Node.isReturnStatement(currError) &&
+        parent &&
+        Node.isBlock(parent)
+      ) {
         const childIndex = currError.getChildIndex();
         parent.removeStatement(childIndex);
-        parent.addStatements('// FIX GOES HERE');
+        parent.addStatements(
+          '// typescript-flag-upgrade automated fix: --noImplicitReturns'
+        );
         parent.addStatements('return undefined;');
       }
     }
+
+    const printer = ts.createPrinter({removeComments: false});
+    console.log(printer.printFile(sourceFile.compilerNode));
   }
 
-  const printer = ts.createPrinter({removeComments: false});
-  console.log(printer.printFile(sourceFile.compilerNode));
-
   // when you're all done, call this and it will save everything to the file system
-  await project.save();
+  // await project.save();
 };
 
-main();
+fixNoImplicitReturns();
 
 // const file = ts.createSourceFile(
 //   'test.ts',
