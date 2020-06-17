@@ -2,7 +2,7 @@ import {Project, ts, Node} from 'ts-morph';
 
 const fixNoImplicitReturns = async (): Promise<void> => {
   const project = new Project({
-    tsConfigFilePath: './test/tsconfig.json',
+    tsConfigFilePath: './test/experimental/tsconfig.json',
   });
 
   const sourceFiles = project.getSourceFiles();
@@ -64,11 +64,11 @@ const fixNoImplicitReturns = async (): Promise<void> => {
   await project.save();
 };
 
-fixNoImplicitReturns();
+// fixNoImplicitReturns();
 
 const fixStrictNullChecks = async (): Promise<void> => {
   const project = new Project({
-    tsConfigFilePath: './test/tsconfig.json',
+    tsConfigFilePath: './test/experimental/tsconfig.json',
   });
 
   const sourceFiles = project.getSourceFiles();
@@ -80,7 +80,7 @@ const fixStrictNullChecks = async (): Promise<void> => {
 
   for (const sourceFile of sourceFiles) {
     const sourceFileDiagnostics = sourceFile.getPreEmitDiagnostics();
-    console.log(sourceFileDiagnostics);
+    // console.log(sourceFileDiagnostics);
 
     const diagnosticPos = new Set();
     sourceFileDiagnostics.forEach(diagnostic => {
@@ -103,7 +103,7 @@ const fixStrictNullChecks = async (): Promise<void> => {
         Node.isIdentifier(currError) &&
         Node.isPropertyAccessExpression(parent!)
       ) {
-        console.log('here');
+        currError.replaceWithText(currError.getText() + '!');
       }
     }
 
@@ -115,7 +115,7 @@ const fixStrictNullChecks = async (): Promise<void> => {
   // await project.save();
 };
 
-// fixStrictNullChecks();
+fixStrictNullChecks();
 
 // const file = ts.createSourceFile(
 //   'test.ts',
