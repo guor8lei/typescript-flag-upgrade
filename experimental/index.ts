@@ -113,6 +113,13 @@ const fixStrictNullChecks = async (): Promise<void> => {
 
   // when you're all done, call this and it will save everything to the file system
   // await project.save();
+
+  // currError.findReferences().forEach(referenceNode => {
+  //   referenceNode.getReferences().forEach(referenceEntry => {
+  //     console.log(referenceEntry.getNode());
+  //   });
+  // });
+  // return;
 };
 
 fixStrictNullChecks();
@@ -135,16 +142,3 @@ fixStrictNullChecks();
 //   'My long desired comment',
 //   true
 // );
-
-// const printer = ts.createPrinter({removeComments: false});
-// console.log(printer.printFile(file));
-
-// ts.addSyntheticLeadingComment(
-//   visited[0],
-//   ts.SyntaxKind.MultiLineCommentTrivia,
-//   'My long desired comment',
-//   true
-// );
-
-// const printer = ts.createPrinter({removeComments: false});
-// console.log(printer.printFile(sourceFile.compilerNode));
