@@ -1,5 +1,7 @@
 import {Project, ts, Node} from 'ts-morph';
 
+interface DiagnosticPosition {}
+
 const fixNoImplicitReturns = async (): Promise<void> => {
   const project = new Project({
     tsConfigFilePath: './test/experimental/tsconfig.json',
@@ -82,33 +84,41 @@ const fixStrictNullChecks = async (): Promise<void> => {
     const sourceFileDiagnostics = sourceFile.getPreEmitDiagnostics();
     // console.log(sourceFileDiagnostics);
 
-    const diagnosticPos = new Set();
+    const diagnosticPos = new Set<string>();
     sourceFileDiagnostics.forEach(diagnostic => {
-      diagnosticPos.add(diagnostic.getStart());
+      diagnosticPos.add(
+        [diagnostic.getStart(), diagnostic.getLength()].toString()
+      );
+      // console.log(diagnostic.getCode());
+      // console.log(diagnostic.getStart());
     });
     // console.log(diagnosticPos);
 
     const errors: Node<ts.Node>[] = [];
     sourceFile.forEachDescendant(node => {
-      if (diagnosticPos.has(node.getStart())) {
+      if (
+        diagnosticPos.has([node.getStart(), node.getText().length].toString())
+      ) {
         errors.push(node);
+        // console.log(node.getText());
       }
     });
-    // console.log(errors);
+    console.log(errors.length);
 
     for (let i = errors.length - 1; i >= 0; i--) {
       const currError = errors[i];
       const parent = currError.getParent();
-      if (
-        Node.isIdentifier(currError) &&
-        Node.isPropertyAccessExpression(parent!)
-      ) {
-        currError.replaceWithText(currError.getText() + '!');
-      }
+      console.log(currError.getKindName());
+      // if (
+      //   Node.isIdentifier(currError) &&
+      //   Node.isPropertyAccessExpression(parent!)
+      // ) {
+      //   currError.replaceWithText(currError.getText() + '!');
+      // }
     }
 
-    const printer = ts.createPrinter({removeComments: false});
-    console.log(printer.printFile(sourceFile.compilerNode));
+    // const printer = ts.createPrinter({removeComments: false});
+    // console.log(printer.printFile(sourceFile.compilerNode));
   }
 
   // when you're all done, call this and it will save everything to the file system
