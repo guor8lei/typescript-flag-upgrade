@@ -30,7 +30,9 @@ import {DiagnosticUtil} from './diagnostic_util';
 
 /** Class responsible for running the execution of the tool. */
 export class Runner {
-  private args: ArgumentOptions;
+  private tsConfigPath: string | undefined;
+  private overrideInputDir: string | undefined;
+
   private project: Project;
 
   private parser: Parser;
@@ -44,9 +46,19 @@ export class Runner {
    * Instantiates project and appropriate modules.
    * @param {ArgumentOptions} args - Arguments passed
    */
-  constructor(args: ArgumentOptions) {
-    this.args = args;
-    this.project = this.createProject();
+  constructor(args?: ArgumentOptions, project?: Project) {
+    if (project) {
+      this.project = project;
+    } else if (args) {
+      this.tsConfigPath = args.p;
+      this.overrideInputDir = args.i;
+      this.project = this.createProject(
+        this.tsConfigPath,
+        this.overrideInputDir
+      );
+    } else {
+      throw Error('need project or args');
+    }
     this.parser = new Parser(this.project);
     this.diagnosticUtil = new DiagnosticUtil();
     this.manipulators = [
@@ -95,10 +107,13 @@ export class Runner {
    * Creates a ts-morph project from filepath.
    * @return {Project} Created project
    */
-  private createProject(): Project {
-    if (this.args.i) {
+  private createProject(
+    tsConfigPath: string,
+    overrideInputDir: string | undefined
+  ): Project {
+    if (overrideInputDir) {
       const project = new Project({
-        tsConfigFilePath: path.join(process.cwd(), this.args.p),
+        tsConfigFilePath: path.join(process.cwd(), tsConfigPath),
         addFilesFromTsConfig: false,
         compilerOptions: {
           strictNullChecks: true,
@@ -109,7 +124,7 @@ export class Runner {
       });
 
       project.addSourceFilesAtPaths(
-        path.join(process.cwd(), this.args.i) + '/**/*{.d.ts,.ts}'
+        path.join(process.cwd(), overrideInputDir) + '/**/*{.d.ts,.ts}'
       );
 
       project.resolveSourceFileDependencies();
@@ -117,7 +132,7 @@ export class Runner {
     }
 
     return new Project({
-      tsConfigFilePath: path.join(process.cwd(), this.args.p),
+      tsConfigFilePath: path.join(process.cwd(), tsConfigPath),
       compilerOptions: {
         strictNullChecks: true,
         strictPropertyInitialization: true,

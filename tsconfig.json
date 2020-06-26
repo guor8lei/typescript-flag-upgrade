@@ -9,5 +9,5 @@
     "strictPropertyInitialization": true,
     "noImplicitReturns": true
   },
-  "include": ["src/**/*.ts", "experimental/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
